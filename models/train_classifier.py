@@ -78,8 +78,11 @@ def build_model():
     """
     pipeline = Pipeline([('vect', CountVectorizer(tokenizer = tokenize)),
                       ('tfidf', TfidfTransformer()),
-                      ('classifier', MultiOutputClassifier(RandomForestClassifier(**params)))])
+                      ('classifier', MultiOutputClassifier(RandomForestClassifier()))])
     return pipeline
+
+def run_grid_search():
+    pass
 
 def evaluate_model(model, X_test, Y_test, category_names):
     """
