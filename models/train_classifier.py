@@ -69,7 +69,7 @@ def tokenize(text):
     
 
 
-def build_model():
+def build_model(params={}):
     """
     build the ML model and specify a pipeline
     
@@ -80,22 +80,20 @@ def build_model():
     """
     pipeline = Pipeline([('vect', CountVectorizer(tokenizer = tokenize)),
                       ('tfidf', TfidfTransformer()),
-                      ('classifier', MultiOutputClassifier(RandomForestClassifier()))])
+                      ('classifier', MultiOutputClassifier(RandomForestClassifier(**params)))])
     return pipeline
 
-def run_grid_search():
+def run_grid_search(model, X_train, Y_train):
     parameters = {
-        'classifier__estimator__n_estimators': [50, 70, 90, 110],
-        'classifier__estimator__criterion': ['entropy', 'gini'],
-        'classifier__estimator__max_features': ['sqrt',]
-        
+        'classifier__estimator__n_estimators': [10,20],
+        'classifier__estimator__criterion': ['gini']   
     }
 
     cv = GridSearchCV(model, param_grid = parameters)
     cv.fit(X_train, Y_train)
 
     return cv.best_params_
-    pass
+    
 
 def evaluate_model(model, X_test, Y_test, category_names):
     """
@@ -132,13 +130,21 @@ def main():
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
-#         print(X)
-#         print(Y)
-#         print(category_names)
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
         
         print('Building model...')
         model = build_model()
+
+        print('Running Grid Search...')
+        best_params = run_grid_search(model, X_train, Y_train)
+
+        gs_params = {
+            'n_estimators': best_params['classifier__estimator__n_estimators'],
+            'criterion': best_params['classifier__estimator__criterion']
+        }
+
+        print("Rebuilding Model after Grid Search...")
+        model = build_model(gs_params)
         
         print('Training model...')
         model.fit(X_train, Y_train)
