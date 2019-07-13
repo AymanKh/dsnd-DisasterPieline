@@ -21,6 +21,8 @@ from scipy.stats.mstats import gmean
 from sqlalchemy import create_engine
 import re
 import nltk
+import warnings
+warnings.filterwarnings("ignore")
 
 nltk.download(['punkt', 'wordnet', 'averaged_perceptron_tagger'])
 
@@ -82,6 +84,17 @@ def build_model():
     return pipeline
 
 def run_grid_search():
+    parameters = {
+        'classifier__estimator__n_estimators': [50, 70, 90, 110],
+        'classifier__estimator__criterion': ['entropy', 'gini'],
+        'classifier__estimator__max_features': ['sqrt',]
+        
+    }
+
+    cv = GridSearchCV(model, param_grid = parameters)
+    cv.fit(X_train, Y_train)
+
+    return cv.best_params_
     pass
 
 def evaluate_model(model, X_test, Y_test, category_names):
@@ -96,12 +109,9 @@ def evaluate_model(model, X_test, Y_test, category_names):
     # get predicted categories 
     predicted = model.predict(X_test)
 
-    # print accuracy, percisison, recall and f1-score
-    print(classification_report(Y_test, predicted, target_names=category_names))
-
-    # print accuracy for every category
+    # print classification report for every category
     for i in range(36):
-        print("Category {} -> Accuracy Score - {}".format(category_names[i], accuracy_score(Y_test[:, i], predicted[:, i])))
+        print("Category: {} : \n {}".format(category_names[i], classification_report(Y_test.values[:, i], predicted[:, i])))
 
 
 def save_model(model, model_filepath):
