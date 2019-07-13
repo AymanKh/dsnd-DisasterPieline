@@ -34,30 +34,84 @@ def load_data(database_filepath):
     OUTPUTS:
         X: feature DataFrame
         Y: label DataFrame
-        category_names: used for visualization
+        categorical_names: used for visualization
     """
     engine = create_engine('sqlite:///'+database_filepath)
     df = pd.read_sql_table(database_filepath,engine)
     X = df['message']
     Y = df.iloc[:,4:]
-    category_names = Y.columns
-    return X, Y, category_names
+    categorical_names = Y.columns
+    return X, Y, categorical_names
 
 
 def tokenize(text):
-    pass
+    """
+    a function to tokenize the provided text
+    
+    INPUTS:
+        text: the text that needs to be tokenized
+    OUTPUTS:
+        tokens: tokenized text ready for processing
+    """
+
+    # use nltk library 
+    tokens = word_tokenize(text)
+
+    # use nltk lemmatizer 
+    lemma = WordNetLemmatizer()
+    
+    # lemmatize, make it lower case, and remove spaces
+    tokens = [lemma.lemmatize(t).lower().strip() for t in tokens]
+
+    return tokens
+    
 
 
 def build_model():
-    pass
-
+    """
+    build the ML model and specify a pipeline
+    
+    INPUTS:
+        NONE
+    OUTPUTS:
+        Pipeline: the ML pipeline
+    """
+    pipeline = Pipeline([('vect', CountVectorizer(tokenizer = tokenize)),
+                      ('tfidf', TfidfTransformer()),
+                      ('classifier', MultiOutputClassifier(RandomForestClassifier(**params)))])
+    return pipeline
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
+    """
+    Evaluate the models' performance and print it on the console  
+    INPUTS:
+        model object, data, and category names
+    OUTPUTS:
+        NONE
+    """
+
+    # get predicted categories 
+    predicted = model.predict(X_test)
+
+    # print accuracy, percisison, recall and f1-score
+    print(classification_report(Y_test, predicted, target_names=category_names))
+
+    # print accuracy for every category
+    for i in range(36):
+        print("Category {} -> Accuracy Score - {}".format(category_names[i], accuracy_score(Y_test[:, i], predicted[:, i])))
 
 
 def save_model(model, model_filepath):
-    pass
+    """
+    serialize the model and save it locally 
+    
+    INPUTS:
+        model: the actual model object
+        model_filepath: the desired destiniation
+    OUTPUTS:
+        NONE
+    """
+    pickle.dump(model, open(model_filepath, "wb"))
 
 
 def main():
